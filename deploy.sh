@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-"""
-deploy.sh - Automation utility for server lifecycle management and GitHub sync.
-"""
+# deploy.sh - Automation utility for server lifecycle management and GitHub sync.
 
 # Exit immediately if a command exits with a non-zero status
 set -o pipefail
