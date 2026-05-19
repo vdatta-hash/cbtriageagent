@@ -4,7 +4,7 @@ info:
   description: Secure API to interact with corporate Buganizer for listing and triaging cloud blocker issues.
   version: 1.0.0
 servers:
-  - url: http://vdatta.c.googlers.com:8080
+  - url: http://vdatta.c.googlers.com:8081
     description: Local Corp VM Server
 paths:
   /issues:

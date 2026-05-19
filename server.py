@@ -207,7 +207,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Gemini Enterprise Buganizer Agent Web Server")
     # Enforce secure default host listening on localhost (127.0.0.1) as required by guidelines
     parser.add_argument("--host", default="127.0.0.1", help="Host interface to bind to")
-    parser.add_argument("--port", type=int, default=8080, help="Port number to bind to")
+    parser.add_argument("--port", type=int, default=8081, help="Port number to bind to")
     
     args = parser.parse_args()
     run_server(args.host, args.port)
