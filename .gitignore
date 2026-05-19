@@ -1,0 +1,27 @@
+# Python caching
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Logs and runtime outputs
+*.log
+logs/
+data/
+
+# Credentials & keys
+*.key
+*.pem
+jwt_secret.txt
+
+# OS metadata
+.DS_Store
+Thumbs.db
