@@ -1,0 +1,100 @@
+openapi: 3.0.0
+info:
+  title: Buganizer Cloud Blocker Triage Agent API
+  description: Secure API to interact with corporate Buganizer for listing and triaging cloud blocker issues.
+  version: 1.0.0
+servers:
+  - url: http://vdatta.c.googlers.com:8080
+    description: Local Corp VM Server
+paths:
+  /issues:
+    get:
+      summary: List Buganizer issues
+      description: Search and retrieve a list of Buganizer issues matching a specific query. Extremely useful for finding cloud blockers.
+      operationId: listIssues
+      parameters:
+        - name: query
+          in: query
+          required: true
+          description: Search query matching issue attributes (e.g. component, tags, keywords like "cloud blocker").
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of issues to return (default is 50, max is 200).
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: A list of matching issues retrieved from Buganizer.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        '400':
+          description: Invalid input parameters or query contains unsafe characters.
+        '500':
+          description: CLI execution failed or credentials expired.
+
+  /issues/{bug_id}:
+    get:
+      summary: Get issue details
+      description: Fetch comprehensive comments, description, and metadata for a single Buganizer issue using its unique positive integer ID.
+      operationId: getIssueDetails
+      parameters:
+        - name: bug_id
+          in: path
+          required: true
+          description: The numeric integer Buganizer ID of the issue.
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detailed information about the specified Buganizer issue.
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Invalid Bug ID.
+        '404':
+          description: Issue not found.
+        '500':
+          description: CLI execution failed or credentials expired.
+
+  /issues/{bug_id}/triage:
+    post:
+      summary: Triage a specific issue
+      description: Triggers the automated triage process on a specific Buganizer issue by analyzing its content, tags, and comments.
+      operationId: triageIssue
+      parameters:
+        - name: bug_id
+          in: path
+          required: true
+          description: The numeric integer Buganizer ID of the issue.
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Triage action completed successfully. Returns the decision and notes.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bug_id:
+                    type: integer
+                  action_taken:
+                    type: string
+                  decision:
+                    type: string
+                  notes:
+                    type: string
+        '400':
+          description: Invalid Bug ID.
+        '500':
+          description: CLI execution failed or credentials expired.
