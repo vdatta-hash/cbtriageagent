@@ -11,7 +11,7 @@ PID_FILE="${PROJECT_DIR}/server.pid"
 LOG_FILE="${PROJECT_DIR}/server.log"
 
 # Default Host & Port config
-DEFAULT_HOST="127.0.0.1"
+DEFAULT_HOST="0.0.0.0"
 DEFAULT_PORT=8081
 
 function print_usage() {

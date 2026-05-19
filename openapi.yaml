@@ -6,6 +6,8 @@ info:
 servers:
   - url: http://vdatta.c.googlers.com:8081
     description: Local Corp VM Server
+security:
+  - OAuth2: []
 paths:
   /issues:
     get:
@@ -98,3 +100,15 @@ paths:
           description: Invalid Bug ID.
         '500':
           description: CLI execution failed or credentials expired.
+
+components:
+  securitySchemes:
+    OAuth2:
+      type: oauth2
+      description: Google corporate Gaia authentication
+      flows:
+        authorizationCode:
+          authorizationUrl: https://accounts.google.com/o/oauth2/v2/auth
+          tokenUrl: https://oauth2.googleapis.com/token
+          scopes:
+            https://www.googleapis.com/auth/buganizer: "Read and write access to Buganizer"

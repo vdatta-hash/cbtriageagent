@@ -52,6 +52,28 @@ class SecureAgentRequestHandler(http.server.BaseHTTPRequestHandler):
             "status": status_code
         })
 
+    def get_bearer_token(self):
+        """
+        Extracts the Bearer token from the Authorization header.
+        """
+        auth_header = self.headers.get("Authorization")
+        if not auth_header:
+            return None
+        parts = auth_header.split(" ")
+        if len(parts) == 2 and parts[0].lower() == "bearer":
+            return parts[1].strip()
+        return None
+
+    def require_auth(self):
+        """
+        Enforces Bearer token validation. Returns the token if valid,
+        otherwise raises PermissionError.
+        """
+        token = self.get_bearer_token()
+        if not token:
+            raise PermissionError("Unauthorized. Missing or invalid Bearer token in Authorization header.")
+        return token
+
     def do_GET(self):
         """
         Routes GET requests securely.
@@ -80,6 +102,7 @@ class SecureAgentRequestHandler(http.server.BaseHTTPRequestHandler):
                 
             # 2. Route GET /issues (Search issues)
             if path == "/issues":
+                token = self.require_auth()
                 if "query" not in query_params:
                     self.send_error_response(400, "Missing required query parameter 'query'.")
                     return
@@ -94,12 +117,13 @@ class SecureAgentRequestHandler(http.server.BaseHTTPRequestHandler):
                         return
                         
                 # List issues securely
-                results = triage.list_bugs(raw_query, limit=limit)
+                results = triage.list_bugs(raw_query, limit=limit, auth_token=token)
                 self.send_json_response(200, results)
                 return
                 
             # 3. Route GET /issues/{bug_id} (Get single issue details)
             if path.startswith("/issues/"):
+                token = self.require_auth()
                 parts = path.split("/")
                 # Expected: ["", "issues", "{bug_id}"]
                 if len(parts) == 3 and parts[1] == "issues":
@@ -111,7 +135,7 @@ class SecureAgentRequestHandler(http.server.BaseHTTPRequestHandler):
                         return
                         
                     # Fetch details securely
-                    details = triage.get_bug_details(bug_id)
+                    details = triage.get_bug_details(bug_id, auth_token=token)
                     self.send_json_response(200, details)
                     return
 
@@ -135,6 +159,7 @@ class SecureAgentRequestHandler(http.server.BaseHTTPRequestHandler):
         try:
             # 1. Route POST /issues/{bug_id}/triage
             if path.startswith("/issues/") and path.endswith("/triage"):
+                token = self.require_auth()
                 parts = path.split("/")
                 # Expected: ["", "issues", "{bug_id}", "triage"]
                 if len(parts) == 4 and parts[1] == "issues" and parts[3] == "triage":
@@ -150,7 +175,7 @@ class SecureAgentRequestHandler(http.server.BaseHTTPRequestHandler):
                     logging.info("Triggering automated triage simulation on Bug %d...", bug_id)
                     
                     # Fetch current bug details to evaluate
-                    details = triage.get_bug_details(bug_id)
+                    details = triage.get_bug_details(bug_id, auth_token=token)
                     
                     title = details.get("title", "").lower()
                     description = details.get("description", "").lower()

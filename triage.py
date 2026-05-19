@@ -8,6 +8,9 @@ import json
 import logging
 import subprocess
 import re
+import urllib.request
+import urllib.error
+import urllib.parse
 
 # Configure logging
 logging.basicConfig(
@@ -89,12 +92,53 @@ def run_issues_command(cmd_args):
         logging.error("Buganizer CLI binary not found at: %s", ISSUES_CLI_PATH)
         raise RuntimeError(f"Buganizer CLI binary not found at '{ISSUES_CLI_PATH}'.")
 
-def get_bug_details(bug_id):
+def call_buganizer_rest_api(endpoint_path, query_params=None, method="GET", body=None, auth_token=None):
+    """
+    Makes a secure HTTPS request to the corporate Buganizer REST API.
+    Uses only standard library components to prevent dependency pollution.
+    """
+    if not auth_token:
+        raise PermissionError("Authentication token required to call Buganizer REST API.")
+        
+    base_url = "https://issuetracker.googleapis.com/v1"
+    url = f"{base_url}{endpoint_path}"
+    
+    if query_params:
+        encoded_params = urllib.parse.urlencode(query_params)
+        url = f"{url}?{encoded_params}"
+        
+    req = urllib.request.Request(url, method=method)
+    req.add_header("Authorization", f"Bearer {auth_token}")
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Accept", "application/json")
+    
+    if body:
+        req.data = json.dumps(body).encode("utf-8")
+        
+    try:
+        logging.info("Calling Buganizer REST API: %s %s", method, url)
+        with urllib.request.urlopen(req, timeout=10) as response:
+            raw_response = response.read().decode("utf-8")
+            return json.loads(raw_response)
+    except urllib.error.HTTPError as he:
+        err_body = he.read().decode("utf-8") if he.fp else ""
+        logging.error("REST API HTTP Error (%d): %s. Details: %s", he.code, he.reason, err_body)
+        if he.code == 401:
+            raise PermissionError("OAuth/Gaia authentication token expired or invalid.")
+        raise RuntimeError(f"Buganizer REST API error: {he.code} {he.reason}")
+    except Exception as e:
+        logging.exception("Failed to call Buganizer REST API:")
+        raise RuntimeError(f"Failed to reach Buganizer REST API: {e}")
+
+def get_bug_details(bug_id, auth_token=None):
     """
     Fetches full details of a specific Buganizer issue.
     """
     validated_id = validate_bug_id(bug_id)
-    # issues show <bug_id> --format=json
+    if auth_token:
+        return call_buganizer_rest_api(f"/issues/{validated_id}", auth_token=auth_token)
+        
+    # Fallback to local issues-cli
     raw_output = run_issues_command(["show", str(validated_id), "--format=json"])
     try:
         return json.loads(raw_output)
@@ -102,7 +146,7 @@ def get_bug_details(bug_id):
         # If not JSON, return raw output string
         return {"raw_text": raw_output}
 
-def list_bugs(query, limit=50):
+def list_bugs(query, limit=50, auth_token=None):
     """
     Lists Buganizer issues matching a specific query.
     """
@@ -111,7 +155,14 @@ def list_bugs(query, limit=50):
     # Limit limits output count
     limit = min(max(int(limit), 1), 200)
     
-    # issues list "<query>" --format=json --limit=<limit>
+    if auth_token:
+        return call_buganizer_rest_api(
+            "/issues",
+            query_params={"query": validated_query, "pageSize": limit},
+            auth_token=auth_token
+        )
+        
+    # Fallback to local issues-cli
     raw_output = run_issues_command([
         "list", 
         validated_query, 
