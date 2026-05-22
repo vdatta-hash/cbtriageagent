@@ -21,8 +21,9 @@ from typing import List, Optional
 # Configuration for the Gemini API Key (Loaded from environment)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
-    logging.warning("GEMINI_API_KEY environment variable is not set. AI-driven triage will fail if invoked.")
+    logging.info("GEMINI_API_KEY environment variable is not set. Defaulting to Google Cloud Application Default Credentials (ADC) via Vertex AI.")
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 PLAYBOOK_PATH = os.path.join(PROJECT_DIR, "skills", "buganizer_triage_playbook", "SKILL.md")
 
 
@@ -277,10 +278,13 @@ def triage_issue(bug_id, auth_token=None, recommend_only=False):
         playbook_content = f.read()
         
     # Step 3: Initialize the Gemini client and generate the structured triage recommendation
-    if not GEMINI_API_KEY:
-        raise ValueError("GEMINI_API_KEY environment variable is not set. Please configure it in your environment.")
-        
-    client = genai.Client(api_key=GEMINI_API_KEY)
+    if GEMINI_API_KEY:
+        logging.info("Using Developer API Key for Gemini authentication.")
+        client = genai.Client(api_key=GEMINI_API_KEY)
+    else:
+        logging.info("Initializing Gemini client using Google Cloud Application Default Credentials (ADC) via Vertex AI.")
+        client = genai.Client(vertexai=True)
+
     prompt = (
         f"You are the NPS-GE-Security Bug Triage Agent. Triage the following issue "
         f"based strictly on your system instructions playbook. Return your recommendation "
