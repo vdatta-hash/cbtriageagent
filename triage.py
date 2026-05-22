@@ -20,7 +20,7 @@ from typing import List, Optional
 
 # Configuration for the Gemini API Key
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyAu2OmgvF8kEDjSZ_WozMX3HDyKBZpeyDo")
-PLAYBOOK_PATH = "/Users/vdatta/.gemini/jetski/scratch/buganizer_triage_playbook_8186342.md"
+PLAYBOOK_PATH = "/Users/vdatta/.gemini/jetski/skills/buganizer_triage_playbook/SKILL.md"
 
 class TriageRecommendation(BaseModel):
     action_taken: str = Field(description="The high-level action category: DUPLICATE, ROUTE_ONCALL, WORKAROUND, RECOMMEND_CR, NEED_INFO, or NO_ACTION")
