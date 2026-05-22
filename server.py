@@ -170,36 +170,10 @@ class SecureAgentRequestHandler(http.server.BaseHTTPRequestHandler):
                         self.send_error_response(400, str(ve))
                         return
                     
-                    # Placeholder for automated triage logic once shared.
-                    # Currently runs analysis simulation.
-                    logging.info("Triggering automated triage simulation on Bug %d...", bug_id)
+                    logging.info("Triggering custom 5-phase automated triage on Bug %d...", bug_id)
                     
-                    # Fetch current bug details to evaluate
-                    details = triage.get_bug_details(bug_id, auth_token=token)
-                    
-                    title = details.get("title", "").lower()
-                    description = details.get("description", "").lower()
-                    
-                    # Simple mock triage rule execution
-                    action_taken = "NO_ACTION"
-                    decision = "PENDING_REVIEW"
-                    notes = "Analyzed blocker issue. Awaiting triage rules document from user."
-                    
-                    if "blocker" in title or "blocker" in description:
-                        action_taken = "FLAGGED_BLOCKER"
-                        decision = "PRIORITY_TRIAGE"
-                        notes = "Flagged as high-priority blocker based on title analysis."
-                        
-                    triage_result = {
-                        "bug_id": bug_id,
-                        "action_taken": action_taken,
-                        "decision": decision,
-                        "notes": notes,
-                        "raw_details": {
-                            "title": details.get("title", "Unknown"),
-                            "status": details.get("status", "New")
-                        }
-                    }
+                    # Run actual automated triage workflow using our secure logic
+                    triage_result = triage.triage_issue(bug_id, auth_token=token)
                     
                     self.send_json_response(200, triage_result)
                     return
