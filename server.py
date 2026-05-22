@@ -170,10 +170,15 @@ class SecureAgentRequestHandler(http.server.BaseHTTPRequestHandler):
                         self.send_error_response(400, str(ve))
                         return
                     
-                    logging.info("Triggering custom 5-phase automated triage on Bug %d...", bug_id)
+                    query_params = urllib.parse.parse_qs(parsed_url.query)
+                    recommend_only = False
+                    if "recommend_only" in query_params:
+                        recommend_only = query_params["recommend_only"][0].lower() == "true"
+                        
+                    logging.info("Triggering custom 5-phase automated triage on Bug %d (recommend_only=%s)...", bug_id, recommend_only)
                     
-                    # Run actual automated triage workflow using our secure logic
-                    triage_result = triage.triage_issue(bug_id, auth_token=token)
+                    # Run actual automated triage workflow using our secure GenAI logic
+                    triage_result = triage.triage_issue(bug_id, auth_token=token, recommend_only=recommend_only)
                     
                     self.send_json_response(200, triage_result)
                     return
